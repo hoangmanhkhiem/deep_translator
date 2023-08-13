@@ -12,21 +12,19 @@ def detect_language(text, api_key=None):
     if not text:
         raise Exception("Please provide an input text")
 
-    else:
-        headers = config['headers']
-        headers['Authorization'] = headers['Authorization'].format(api_key)
+    headers = config['headers']
+    headers['Authorization'] = headers['Authorization'].format(api_key)
 
-        try:
-            response = requests.post(config['url'],
-                                     json={'q': text},
-                                     headers=headers)
+    try:
+        response = requests.post(config['url'],
+                                 json={'q': text},
+                                 headers=headers)
 
-            body = response.json().get('data')
-            detections = body.get('detections')
-            lang = detections[0].get('language', None)
-            if lang:
-                return lang
+        body = response.json().get('data')
+        detections = body.get('detections')
+        if lang := detections[0].get('language', None):
+            return lang
 
-        except Exception as e:
-            print("Error occured while requesting from server: ", e.args)
-            raise e
+    except Exception as e:
+        print("Error occured while requesting from server: ", e.args)
+        raise e
