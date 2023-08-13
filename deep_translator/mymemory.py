@@ -22,11 +22,13 @@ class MyMemoryTranslator(BaseTranslator):
         self._target = target
 
         self.email = kwargs.get('email', None)
-        super(MyMemoryTranslator, self).__init__(base_url=self.__base_url,
-                                                 source=self._source,
-                                                 target=self._target,
-                                                 payload_key='q',
-                                                 langpair='{}|{}'.format(self._source, self._target))
+        super(MyMemoryTranslator, self).__init__(
+            base_url=self.__base_url,
+            source=self._source,
+            target=self._target,
+            payload_key='q',
+            langpair=f'{self._source}|{self._target}',
+        )
 
     @staticmethod
     def get_supported_languages(as_dict=False):
@@ -39,30 +41,29 @@ class MyMemoryTranslator(BaseTranslator):
         @return: str: translated text
         """
 
-        if self._validate_payload(text):
-            text = text.strip()
+        if not self._validate_payload(text):
+            return
+        text = text.strip()
 
-            if self.payload_key:
-                self._url_params[self.payload_key] = text
-            if self.email:
-                self._url_params['de'] = self.email
+        if self.payload_key:
+            self._url_params[self.payload_key] = text
+        if self.email:
+            self._url_params['de'] = self.email
 
-            response = requests.get(self.__base_url,
-                                    params=self._url_params,
-                                    headers=self.headers)
-            data = response.json()
-            if not data:
-                raise Exception("Translation was not found in response!")
+        response = requests.get(self.__base_url,
+                                params=self._url_params,
+                                headers=self.headers)
+        data = response.json()
+        if not data:
+            raise Exception("Translation was not found in response!")
 
-            translation = data.get('responseData').get('translatedText')
-            if translation:
-                return translation
+        if translation := data.get('responseData').get('translatedText'):
+            return translation
 
-            elif not translation:
-                all_matches = data.get('matches')
-                matches = (match['translation'] for match in all_matches)
-                next_match = next(matches)
-                return next_match if not kwargs.get('return_all') else list(all_matches)
+        all_matches = data.get('matches')
+        matches = (match['translation'] for match in all_matches)
+        next_match = next(matches)
+        return next_match if not kwargs.get('return_all') else list(all_matches)
 
     def translate_sentences(self, sentences=None, **kwargs):
         """

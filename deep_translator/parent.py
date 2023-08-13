@@ -47,7 +47,7 @@ class BaseTranslator(ABC):
 
     @staticmethod
     def __check_length(payload, min_chars, max_chars):
-        return True if min_chars < len(payload) < max_chars else False
+        return min_chars < len(payload) < max_chars
 
     @abstractmethod
     def translate(self, text, **kwargs):

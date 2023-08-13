@@ -64,21 +64,21 @@ class GoogleTranslator(BaseTranslator):
         @return: str: translated text
         """
 
-        if self._validate_payload(text):
-            text = text.strip()
+        if not self._validate_payload(text):
+            return
+        text = text.strip()
 
-            if self.payload_key:
-                self._url_params[self.payload_key] = text
+        if self.payload_key:
+            self._url_params[self.payload_key] = text
 
-            response = requests.get(self.__base_url,
-                                    params=self._url_params)
+        response = requests.get(self.__base_url,
+                                params=self._url_params)
 
-            soup = BeautifulSoup(response.text, 'html.parser')
-            element = soup.find(self._element_tag, self._element_query)
-            if not element:
-                raise ElementNotFoundInGetRequest(element)
-
+        soup = BeautifulSoup(response.text, 'html.parser')
+        if element := soup.find(self._element_tag, self._element_query):
             return element.get_text(strip=True)
+        else:
+            raise ElementNotFoundInGetRequest(element)
 
     def translate_file(self, path, **kwargs):
         try:

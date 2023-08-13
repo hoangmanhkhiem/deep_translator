@@ -59,35 +59,37 @@ class PonsTranslator(BaseTranslator):
 
     def translate(self, word, **kwargs):
 
-        if self._validate_payload(word):
-            url = "{}{}-{}/{}".format(self.__base_url, self._source, self._target, word)
-            url = requote_uri(url)
-            response = requests.get(url)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            elements = soup.findAll(self._element_tag, self._element_query)
-            if not elements:
-                raise ElementNotFoundInGetRequest(elements)
+        if not self._validate_payload(word):
+            return
+        url = f"{self.__base_url}{self._source}-{self._target}/{word}"
+        url = requote_uri(url)
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        elements = soup.findAll(self._element_tag, self._element_query)
+        if not elements:
+            raise ElementNotFoundInGetRequest(elements)
 
-            eof = []
-            for el in elements:
-                temp = ''
-                for e in el.findAll('a'):
-                    if e.parent.name == 'div':
-                        if e and "/translate/{}-{}/".format(self._target, self._source) in e.get('href'):
-                            temp += e.get_text() + ' '
-                            if not kwargs.get('return_all'):
-                                return temp
-                eof.append(temp)
+        eof = []
+        for el in elements:
+            temp = ''
+            for e in el.findAll('a'):
+                if e.parent.name == 'div':
+                    if (
+                        e
+                        and f"/translate/{self._target}-{self._source}/"
+                        in e.get('href')
+                    ):
+                        temp += f'{e.get_text()} '
+                        if not kwargs.get('return_all'):
+                            return temp
+            eof.append(temp)
 
-            if 'return_all' in kwargs and kwargs.get('return_all'):
-                return [word for word in eof if word and len(word) > 1]
+        if 'return_all' in kwargs and kwargs.get('return_all'):
+            return [word for word in eof if word and len(word) > 1]
 
     def translate_words(self, words, **kwargs):
         if not words:
             raise NotValidPayload(words)
 
-        translated_words = []
-        for word in words:
-            translated_words.append(self.translate(payload=word))
-        return translated_words
+        return [self.translate(payload=word) for word in words]
 
